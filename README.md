@@ -131,15 +131,14 @@ I'm actively seeking SOC Analyst opportunities in the Dallas-Fort Worth area and
 
 📧 **Email:** kade.capps@gmail.com  
 💼 **LinkedIn:** https://www.linkedin.com/in/kadecapps/
-🎮 **TryHackMe:** https://tryhackme.com/p/Multack 
+🎮 **TryHackMe:** https://tryhackme.com/p/Multack
 📍 **Location:** Parker, TX (Open to relocation for the right opportunity)
 
 ---
 
 ## Repository Stats
 
-![GitHub last commit](https://img.shields.io/github/last-commit/yourusername/SOC-Analyst-Portfolio?style=flat-square)
-![GitHub repo size](https://img.shields.io/github/repo-size/yourusername/SOC-Analyst-Portfolio?style=flat-square)
+
 
 ---
 
