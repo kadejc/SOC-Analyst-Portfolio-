@@ -1,0 +1,98 @@
+Security Incident Investigation Report
+Windows Event Log Analysis
+Executive Summary
+On February 2, 2026, automated log monitoring detected Event ID 1100 (Event Log service shutdown) at 06:48:34 AM, which triggered a security investigation. Through systematic analysis of Windows Security and System event logs using Splunk, the incident was determined to be a hardware failure (failing battery causing unexpected system shutdown) rather than a security compromise. This report documents the investigation methodology, findings, and demonstrates proficiency in security event analysis and incident response procedures.
+Incident Details
+Date/Time	February 2, 2026 - 06:48:34 AM
+Affected System	WORKSTATION-001
+Initial Alert	Event ID 1100 - Event Logging Service Shutdown
+Severity	High (potential anti-forensics indicator)
+Final Determination	Hardware failure - No security compromise
+
+Investigation Methodology
+1. Initial Triage
+Upon detecting Event ID 1100, the following queries were executed in Splunk to assess the scope:
+source="WMI:WinEventLog:Security" EventCode=1100
+2. Timeline Reconstruction
+A comprehensive timeline was constructed using correlated events from Security and System logs:
+Time	Event
+06:48:34 AM	Event 1100 - Event Log service shutdown
+06:53:59 AM	Event 4608 - Windows starting (system boot)
+06:55:53 AM	Event 7045 - Service installation (IntelTACD driver)
+06:56:00-59 AM	Normal system startup activity
+
+3. Suspicious Activity Analysis
+The investigation focused on several concerning indicators:
+•	Absence of Event ID 1074 (clean shutdown initiation) or 6008 (unexpected shutdown)
+•	Multiple Event ID 7045 entries (new service installation) - 5 services in 13 seconds
+•	Pattern of service installations at unusual hours over the previous week
+Query executed to examine service installations:
+source="WMI:WinEventLog:System" EventCode=7045 | table _time, ServiceName, ServiceFileName, ServiceType
+Key Findings
+Service Installation Analysis
+All Event ID 7045 entries were identified as legitimate Intel driver installations:
+•	Service Name: IntelTACD (Intel Telemetry Application and Controller Driver)
+•	File Location: C:\Windows\System32\drivers\IntelTACD.sys (legitimate system path)
+•	Service Type: Kernel mode driver
+•	Start Type: Demand start (only runs when needed)
+Root Cause Determination
+Further investigation revealed the underlying cause was hardware-related:
+•	System battery was failing, causing unexpected power loss
+•	Sudden power loss prevented Windows from logging clean shutdown events
+•	Intel power management driver reinstalled during recovery as part of hardware state verification
+Threat Assessment
+Initial Concerns
+Event ID 1100 without corresponding shutdown events is a known indicator of anti-forensics techniques used by adversaries to:
+•	Cover tracks before or during malicious activity
+•	Prevent logging of unauthorized actions
+•	Establish persistence through service installation
+Validation of Legitimacy
+The following factors confirmed this was not a security incident:
+•	No Event ID 1102 (audit log cleared) was detected
+•	Service installed from legitimate Windows system directory
+•	Driver signature validated as official Intel software
+•	No suspicious process creation (Event ID 4688) or network activity detected
+Splunk Queries Utilized
+The following queries were developed and executed during the investigation:
+Initial Event Detection
+source="WMI:WinEventLog:Security" NOT CategoryString="Special Logon"
+System Event Correlation
+source="WMI:WinEventLog:System" (EventCode=1074 OR EventCode=6006 OR EventCode=6008) earliest="02/02/2026:06:00:00" latest="02/02/2026:06:50:00"
+Service Installation Analysis
+source="WMI:WinEventLog:System" EventCode=7045 | table _time, _raw
+Process Execution Review
+source="WMI:WinEventLog:Security" EventCode=4688 earliest="02/02/2026:06:30:00" latest="02/02/2026:06:48:34" | table _time, Process_Name, Process_Command_Line
+Recommendations
+Immediate Actions
+•	Hardware Remediation: Replace failing battery to prevent data loss and file system corruption
+•	Log Retention: Maintain current 30-day retention policy for forensic capability
+Monitoring Enhancements
+•	Alert Tuning: Create correlation rule for Event 1100 without Event 1074/6006/6008 within 5 minutes
+•	Service Installation Monitoring: Baseline legitimate service installations and alert on anomalies (unusual paths, unsigned drivers)
+•	Noise Reduction: Filter routine Special Logon events while preserving security-relevant authentication failures
+Lessons Learned
+Investigation Process
+•	Event ID 1100 requires immediate investigation due to anti-forensics implications
+•	Timeline reconstruction through log correlation is essential for accurate root cause analysis
+•	Service installation events must be validated against known good baselines and file paths
+False Positive Identification
+•	Hardware failures can mimic security incidents
+•	Contextual information (battery status, user reports) aids in accurate triage
+•	Legitimate driver updates during system recovery can generate suspicious patterns
+Conclusion
+This investigation successfully identified and resolved what initially appeared to be a potential security incident. Through systematic log analysis using Splunk, correlation of multiple event sources, and validation of system artifacts, the root cause was determined to be hardware failure rather than malicious activity. The investigation demonstrates the importance of thorough analysis before escalation and highlights the value of comprehensive log monitoring in distinguishing between security events and operational issues.
+
+This case serves as a valuable learning opportunity for refining detection logic, reducing false positives, and improving incident response efficiency. The methodologies and queries developed during this investigation have been documented for future reference and can be adapted for similar scenarios.
+ 
+Appendix A: Key Event IDs Reference
+Event ID	Description	Security Significance
+1100	Event Log Service Shutdown	High - Potential anti-forensics indicator
+1102	Audit Log Cleared	Critical - Evidence destruction
+4608	Windows Starting	Informational - System boot
+4624	Successful Logon	Low - Routine authentication
+4688	Process Creation	Medium - Track process execution
+7045	Service Installation	Medium - Potential persistence mechanism
+1074	System Shutdown Initiated	Informational - Shows shutdown reason
+6008	Unexpected Shutdown	Medium - System crash or power loss
+
+--- End of Report ---
